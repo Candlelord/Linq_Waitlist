@@ -5,7 +5,8 @@ import { join } from 'path';
 
 const input = join(process.cwd(), 'IMG_1277.MOV');
 const outputDir = join(process.cwd(), 'public');
-const output = join(outputDir, 'IMG_1277.mp4');
+const output720 = join(outputDir, 'IMG_1277.mp4');
+const output360 = join(outputDir, 'IMG_1277_360.mp4');
 
 if (!existsSync(input)) {
   console.error('Input file not found:', input);
@@ -21,25 +22,27 @@ try {
   // ignore
 }
 
-const args = [
-  '-i', input,
-  '-c:v', 'libx264',
-  '-preset', 'medium',
-  '-crf', '23',
-  '-c:a', 'aac',
-  '-movflags', '+faststart',
-  output
-];
+const commonArgs = ['-i', input, '-c:v', 'libx264', '-preset', 'medium', '-c:a', 'aac', '-movflags', '+faststart'];
 
-console.log('Running ffmpeg:', ffmpegPath, args.join(' '));
+const run = (args) => new Promise((resolve, reject) => {
+  console.log('Running ffmpeg:', ffmpegPath, args.join(' '));
+  const p = spawn(ffmpegPath, args, { stdio: 'inherit' });
+  p.on('close', (code) => {
+    if (code === 0) resolve(); else reject(code);
+  });
+});
 
-const proc = spawn(ffmpegPath, args, { stdio: 'inherit' });
+(async () => {
+  try {
+    // 720p (default) - keep quality similar to original
+    await run(commonArgs.concat(['-crf', '23', output720]));
 
-proc.on('close', (code) => {
-  if (code === 0) {
-    console.log('Conversion complete:', output);
-  } else {
+    // 360p mobile-friendly version (lower bitrate and scale)
+    await run(commonArgs.concat(['-vf', 'scale=640:360', '-crf', '28', '-b:a', '96k', output360]));
+
+    console.log('All conversions complete:', output720, output360);
+  } catch (code) {
     console.error('ffmpeg exited with code', code);
     process.exit(code);
   }
-});
+})();
