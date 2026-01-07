@@ -21,8 +21,9 @@ function App() {
     <div className="app">
       {/* Video Background */}
       <div className="video-background">
-        <video autoPlay muted loop>
-          <source src="/IMG_1277.MOV" type="video/mp4" />
+        <video autoPlay muted loop poster="/poster.svg">
+          <source src="/IMG_1277.mp4" type="video/mp4" />
+          <source src="/IMG_1277.MOV" type="video/quicktime" />
           Your browser does not support the video tag.
         </video>
       </div>
